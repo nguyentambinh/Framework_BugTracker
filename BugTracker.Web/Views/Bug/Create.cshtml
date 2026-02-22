@@ -1,0 +1,41 @@
+﻿@model BugTracker.Core.DTOs.CreateBugDto
+
+@using (Html.BeginForm())
+{
+    @Html.ValidationSummary(true)
+
+    <div>
+        <label>Title</label>
+        @Html.TextBoxFor(x => x.Title)
+    </div>
+
+    <div>
+        <label>Description</label>
+        @Html.TextAreaFor(x => x.Description)
+    </div>
+
+    <div>
+        <label>Priority</label>
+        @Html.EnumDropDownListFor(x => x.Priority)
+    </div>
+
+    <div>
+        <label>Bug Group</label>
+        @Html.DropDownListFor(
+            x => x.BugGroupId,
+            ViewBag.BugGroups as SelectList,
+            "-- Select group --"
+        )
+    </div>
+
+    <div>
+        <label>Assign To</label>
+        @Html.DropDownListFor(
+            x => x.AssignedToUserId,
+            ViewBag.Users as SelectList,
+            "-- Unassigned --"
+        )
+    </div>
+
+    <button type="submit">Create Bug</button>
+}

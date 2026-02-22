@@ -1,0 +1,22 @@
+﻿@model BugTracker.Core.Entities.Bug
+@{
+    Layout = "~/Views/Shared/_LayoutUser.cshtml";
+}
+
+<h2>Edit Bug</h2>
+
+@using (Html.BeginForm())
+{
+    @Html.HiddenFor(m => m.Id)
+
+    <p>
+        Title: <b>@Model.Title</b>
+    </p>
+
+    <p>
+        Status <br />
+        @Html.EnumDropDownListFor(m => m.Status)
+    </p>
+
+    <button type="submit">Update</button>
+}

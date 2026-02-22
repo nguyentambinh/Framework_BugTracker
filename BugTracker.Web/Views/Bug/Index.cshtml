@@ -1,0 +1,131 @@
+﻿@model IEnumerable<BugTracker.Core.Entities.Bug>
+@using BugTracker.Core.Enums
+
+@{
+    Layout = "~/Views/Shared/_LayoutUser.cshtml";
+}
+
+<h2>🐞 Bug Management</h2>
+
+<!-- ACTION BAR -->
+<div style="margin-bottom:15px">
+    <a class="btn btn-primary" href="@Url.Action("Create")">
+        ➕ Create Bug
+    </a>
+</div>
+
+<!-- SUCCESS MESSAGE -->
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+<!-- FILTER -->
+<form method="get" style="margin-bottom:15px">
+    Status:
+    <select name="status">
+        <option value="">-- All --</option>
+        @foreach (BugStatus s in Enum.GetValues(typeof(BugStatus)))
+        {
+            <option value="@s">@s</option>
+        }
+    </select>
+
+    Priority:
+    <select name="priority">
+        <option value="">-- All --</option>
+        @foreach (BugPriority p in Enum.GetValues(typeof(BugPriority)))
+        {
+            <option value="@p">@p</option>
+        }
+    </select>
+
+    <button type="submit">Filter</button>
+</form>
+
+<!-- TABLE -->
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Title</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Assigned</th>
+            <th>Created</th>
+            <th width="220">Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @if (!Model.Any())
+        {
+            <tr>
+                <td colspan="7" style="text-align:center">
+                    Không có bug nào
+                </td>
+            </tr>
+        }
+        else
+        {
+            foreach (var bug in Model)
+            {
+                <tr>
+                    <td>@bug.Id</td>
+                    <td>@bug.Title</td>
+                    <td>
+                        @switch (bug.Priority)
+                        {
+                            case BugPriority.High:
+                                <span class="badge bg-danger">High</span>
+                                break;
+                            case BugPriority.Medium:
+                                <span class="badge bg-warning">Medium</span>
+                                break;
+                            default:
+                                <span class="badge bg-secondary">Low</span>
+                                break;
+                        }
+                    </td>
+                    <td>
+                        @switch (bug.Status)
+                        {
+                            case BugStatus.Open:
+                                <span class="badge bg-info">Open</span>
+                                break;
+                            case BugStatus.InProgress:
+                                <span class="badge bg-primary">In Progress</span>
+                                break;
+                            case BugStatus.Fixed:
+                                <span class="badge bg-success">Fixed</span>
+                                break;
+                            case BugStatus.Closed:
+                                <span class="badge bg-dark">Closed</span>
+                                break;
+                        }
+                    </td>
+                    <td>
+                        @(bug.AssignedToUserId.HasValue
+        ? bug.AssignedToUserId.Value.ToString()
+        : "Unassigned")
+                    </td>
+                    <td>@bug.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    <td>
+                        <a class="btn btn-sm btn-warning"
+                           href="@Url.Action("Edit", new { id = bug.Id })">
+                            ✏ Edit
+                        </a>
+
+                        <a class="btn btn-sm btn-danger"
+                           href="@Url.Action("Delete", new { id = bug.Id })"
+                           onclick="return confirm('Xác nhận đóng bug này?')">
+                            🗑 Close
+                        </a>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
