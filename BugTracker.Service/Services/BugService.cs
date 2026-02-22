@@ -4,6 +4,7 @@ using BugTracker.Core.Entities;
 using BugTracker.Core.Enums;
 using BugTracker.Core.Interfaces;
 using BugTracker.Data.Context;
+using BugTracker.Data.UnitOfWork;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -16,9 +17,9 @@ namespace BugTracker.Service.Services
     {
         private readonly BugTrackerDbContext _context;
 
-        public BugService()
+        public BugService(IUserContext userContext)
         {
-            _context = new BugTrackerDbContext();
+            _context = new BugTrackerDbContext(userContext);
         }
 
         public ServiceResult Create(CreateBugDto dto, int currentUserId)
@@ -135,6 +136,43 @@ namespace BugTracker.Service.Services
                 .OrderBy(x => x.DisplayName)
                 .ToList();
         }
+        public ServiceResult Close(int id)
+        {
+            var bug = _context.Bugs.Find(id);
+            if (bug == null)
+                return ServiceResult.Fail("Bug không tồn tại");
 
+            bug.Status = BugStatus.Closed;
+
+            _context.SaveChanges(); 
+
+            return ServiceResult.Ok();
+        }
+        public DashboardDto GetDashboard(BugFilterDto filter)
+        {
+            var query = _context.Bugs.AsQueryable();
+
+            if (filter.Status.HasValue)
+                query = query.Where(x => x.Status == filter.Status);
+
+            if (filter.GroupId.HasValue)
+                query = query.Where(x => x.BugGroupId == filter.GroupId);
+
+            if (filter.UserId.HasValue)
+                query = query.Where(x => x.AssignedToUserId == filter.UserId);
+
+            var bugs = query.ToList();
+
+            return new DashboardDto
+            {
+                Bugs = bugs,
+                BugGroups = _context.BugGroups.ToList(),
+                Users = _context.Users.ToList(),
+                TotalBugs = bugs.Count,
+                OpenBugs = bugs.Count(x => x.Status == BugStatus.Open),
+                InProgressBugs = bugs.Count(x => x.Status == BugStatus.InProgress),
+                ClosedBugs = bugs.Count(x => x.Status == BugStatus.Closed)
+            };
+        }
     }
 }

@@ -7,13 +7,13 @@ namespace BugTracker.Data.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.5.1")]
-    public sealed partial class Int : IMigrationMetadata
+    public sealed partial class SeedPermissions : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(Int));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(SeedPermissions));
         
         string IMigrationMetadata.Id
         {
-            get { return "202602221522396_Int"; }
+            get { return "202602221947042_SeedPermissions"; }
         }
         
         string IMigrationMetadata.Source

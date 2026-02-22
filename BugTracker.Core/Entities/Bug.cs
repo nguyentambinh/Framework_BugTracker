@@ -4,7 +4,7 @@ using BugTracker.Core.Enums;
 
 namespace BugTracker.Core.Entities
 {
-    public class Bug : BaseEntity
+    public class Bug : BaseEntity, IAuditable
     {
         public string Title { get; set; }
         public string Description { get; set; }

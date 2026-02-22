@@ -40,6 +40,9 @@
     <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.5.1\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
@@ -55,16 +58,25 @@
     <Compile Include="Base\PagedResult.cs" />
     <Compile Include="Base\ServiceResult.cs" />
     <Compile Include="Base\BaseSpecification.cs" />
+    <Compile Include="DTOs\BugFilterDto.cs" />
     <Compile Include="DTOs\CreateBugDto.cs" />
+    <Compile Include="DTOs\DashboarDto.cs" />
     <Compile Include="Entities\ApplicationUser.cs" />
+    <Compile Include="Entities\AuditLog.cs" />
     <Compile Include="Entities\Bug.cs" />
     <Compile Include="Entities\BugComment.cs" />
     <Compile Include="Entities\BugGroup.cs" />
+    <Compile Include="Entities\Permission.cs" />
+    <Compile Include="Entities\Role.cs" />
+    <Compile Include="Entities\RolePermission.cs" />
     <Compile Include="Enums\BugPriority.cs" />
     <Compile Include="Enums\BugStatus.cs" />
     <Compile Include="Exceptions\BusinessException.cs" />
+    <Compile Include="Interfaces\IAuditable.cs" />
     <Compile Include="Interfaces\IBugService.cs" />
+    <Compile Include="Interfaces\IPermissionService.cs" />
     <Compile Include="Interfaces\IRepository.cs" />
+    <Compile Include="Interfaces\IUserContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Workflow\BugWorkflow.cs" />
   </ItemGroup>

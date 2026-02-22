@@ -14,10 +14,12 @@
 
         protected override void Seed(BugTracker.Data.Context.BugTrackerDbContext context)
         {
-            //  This method will be called after migrating to the latest version.
-
-            //  You can use the DbSet<T>.AddOrUpdate() helper extension method
-            //  to avoid creating duplicate seed data.
+            context.Permissions.AddOrUpdate(
+                p => p.Code,
+                new Permission { Code = "BUG_CREATE", Description = "Create bug" },
+                new Permission { Code = "BUG_EDIT", Description = "Edit bug" },
+                new Permission { Code = "BUG_DELETE", Description = "Delete bug" }
+            );
         }
     }
 }

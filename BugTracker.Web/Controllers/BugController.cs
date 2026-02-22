@@ -6,6 +6,7 @@ using BugTracker.Core.Entities;
 using BugTracker.Core.Enums;
 using BugTracker.Core.Interfaces;
 using BugTracker.Service.Services;
+using BugTracker.Web.Infrastructure;
 
 namespace BugTracker.Web.Controllers
 {
@@ -15,14 +16,15 @@ namespace BugTracker.Web.Controllers
 
         public BugController()
         {
-            _bugService = new BugService();
+            var userContext = new WebUserContext();
+            _bugService = new BugService(userContext);
         }
+
 
         public ActionResult Index(BugStatus? status, int? groupId, int? userId, int page = 1)
         {
             var bugs = _bugService.GetAll();
 
-            // LỌC
             if (status.HasValue)
                 bugs = bugs.Where(x => x.Status == status.Value);
 

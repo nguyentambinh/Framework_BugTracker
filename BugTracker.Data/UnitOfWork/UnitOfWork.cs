@@ -17,9 +17,9 @@ namespace BugTracker.Data.UnitOfWork
         private EfRepository<BugComment> _bugCommentRepository;
         private EfRepository<ApplicationUser> _userRepository;
 
-        public UnitOfWork()
+        public UnitOfWork(BugTrackerDbContext context)
         {
-            _context = new BugTrackerDbContext();
+            _context = context;
         }
 
         /// <summary>
