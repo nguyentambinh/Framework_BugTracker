@@ -1,6 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Web.Mvc;
 using BugTracker.Core.DTOs;
+using BugTracker.Core.Entities;
 using BugTracker.Core.Enums;
 using BugTracker.Core.Interfaces;
 using BugTracker.Service.Services;
@@ -16,17 +18,38 @@ namespace BugTracker.Web.Controllers
             _bugService = new BugService();
         }
 
-        public ActionResult Index(BugStatus? status)
+        public ActionResult Index(BugStatus? status, int? groupId, int? userId, int page = 1)
         {
             var bugs = _bugService.GetAll();
 
+            // LỌC
             if (status.HasValue)
-                bugs = bugs.Where(b => b.Status == status.Value);
+                bugs = bugs.Where(x => x.Status == status.Value);
 
-            return View(bugs);
+            if (groupId.HasValue)
+                bugs = bugs.Where(x => x.BugGroupId == groupId.Value);
+
+            if (userId.HasValue)
+                bugs = bugs.Where(x => x.AssignedToUserId == userId.Value);
+
+            var bugList = bugs.ToList();
+
+            var vm = new BugDashboardViewModel
+            {
+                Bugs = bugList,
+
+                BugGroups = _bugService.GetBugGroups().ToList(),
+                Users = _bugService.GetUsers().ToList(),
+
+                TotalBugs = bugList.Count,
+                OpenBugs = bugList.Count(x => x.Status == BugStatus.Open),
+                InProgressBugs = bugList.Count(x => x.Status == BugStatus.InProgress),
+                ClosedBugs = bugList.Count(x => x.Status == BugStatus.Closed)
+            };
+
+            return View(vm);
         }
 
-        // ================= DROPDOWNS =================
         private void LoadDropdowns(int? selectedGroupId = null, int? selectedUserId = null)
         {
             ViewBag.BugGroups = new SelectList(
@@ -42,35 +65,6 @@ namespace BugTracker.Web.Controllers
                 "DisplayName",
                 selectedUserId
             );
-        }
-
-        // ================= CREATE =================
-        public ActionResult Create()
-        {
-            LoadDropdowns();
-            return View();
-        }
-
-        [HttpPost]
-        public ActionResult Create(CreateBugDto dto)
-        {
-            if (!ModelState.IsValid)
-            {
-                LoadDropdowns(dto.BugGroupId, dto.AssignedToUserId);
-                return View(dto);
-            }
-
-            int currentUserId = 2; 
-            var result = _bugService.Create(dto, currentUserId);
-
-            if (!result.Success)
-            {
-                ModelState.AddModelError("", result.Message);
-                LoadDropdowns(dto.BugGroupId, dto.AssignedToUserId);
-                return View(dto);
-            }
-
-            return RedirectToAction("Index");
         }
 
         public ActionResult Edit(int id)
@@ -89,9 +83,18 @@ namespace BugTracker.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        public ActionResult Delete(int id)
+        public ActionResult Closed(int id)
         {
             _bugService.ChangeStatus(id, BugStatus.Closed);
+            return RedirectToAction("Index");
+        }
+        
+
+        [HttpPost]
+        public ActionResult Create(CreateBugDto dto)
+        {
+            int currentUserId = 2; 
+            _bugService.Create(dto, currentUserId);
             return RedirectToAction("Index");
         }
     }

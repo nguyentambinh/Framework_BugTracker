@@ -135,5 +135,6 @@ namespace BugTracker.Service.Services
                 .OrderBy(x => x.DisplayName)
                 .ToList();
         }
+
     }
 }

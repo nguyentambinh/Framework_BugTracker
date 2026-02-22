@@ -1,131 +1,253 @@
-﻿@model IEnumerable<BugTracker.Core.Entities.Bug>
+﻿@model BugDashboardViewModel
 @using BugTracker.Core.Enums
 
 @{
+    ViewBag.Title = "Bug Dashboard";
     Layout = "~/Views/Shared/_LayoutUser.cshtml";
+    var bugs = Model.Bugs ?? new List<BugTracker.Core.Entities.Bug>();
 }
 
-<h2>🐞 Bug Management</h2>
+<style>
+    :root {
+        --primary: #f59e0b;
+        --bg: #020617;
+        --card: #0b1020;
+        --border: rgba(255,255,255,.08);
+        --text: #e5e7eb;
+    }
 
-<!-- ACTION BAR -->
-<div style="margin-bottom:15px">
-    <a class="btn btn-primary" href="@Url.Action("Create")">
-        ➕ Create Bug
-    </a>
+    body {
+        background: var(--bg);
+        color: var(--text)
+    }
+
+    .btn-add {
+        background: var(--primary);
+        border: none;
+        padding: 8px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-weight: 600
+    }
+
+    .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 20px
+    }
+
+    .filters {
+        display: flex;
+        gap: 10px
+    }
+
+    select, input, textarea {
+        background: #020617;
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 8px;
+        border-radius: 10px;
+        width: 100%
+    }
+
+    /* MODAL */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-box {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 20px;
+        width: 600px;
+        max-width: 95%;
+    }
+</style>
+
+<div class="dash">
+
+    <div class="card">
+        <h2>Bug Dashboard</h2>
+        <button class="btn-add" onclick="openCreate()">+ Add Bug</button>
+    </div>
+
+    <!-- FILTER -->
+    <div class="card">
+        @using (Html.BeginForm("Index", "Bug", FormMethod.Get))
+        {
+            <div class="filters">
+                @Html.DropDownList("status",
+                    Enum.GetValues(typeof(BugStatus))
+                        .Cast<BugStatus>()
+                        .Select(x => new SelectListItem
+                             {
+                            Text = x.ToString(),
+                            Value = ((int)x).ToString()
+                        }), "All Status")
+
+                @Html.DropDownList("groupId",
+                    new SelectList(Model.BugGroups, "Id", "Name"),
+                    "All Groups")
+
+                @Html.DropDownList("userId",
+                    new SelectList(Model.Users, "Id", "DisplayName"),
+                    "All Users")
+
+                <button class="btn-add">Filter</button>
+            </div>
+        }
+    </div>
+
+    <!-- TABLE -->
+    <div class="card">
+        <table width="100%">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Group</th>
+                    <th>Assigned</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var b in bugs)
+                {
+                    <tr>
+                        <td data-label="Title">@b.Title</td>
+                        <td data-label="Status"><span class="badge ">@b.Status</span></td>
+                        <td data-label="Priority">@b.Priority</td>
+                        <td data-label="Group">@((b.BugGroup?.Name) ?? "N/A")</td>
+                        <td data-label="Created By">@((b.CreatedByUser?.DisplayName) ?? "System")</td>
+                        <td data-label="Assigned">@((b.AssignedToUser?.DisplayName) ?? "Unassigned")</td>
+                        <td data-label="Date">@b.CreatedDate.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <button class="btn-add"
+                                    onclick="openEdit(
+                                @b.Id,
+                                '@b.Title',
+                                '@b.Description',
+                                @((int)b.Priority),
+                                @(b.BugGroupId ?? 0),
+                                @(b.AssignedToUserId ?? 0)
+                            )">
+                                Edit
+                            </button>
+
+                            @if (b.Status != BugStatus.Closed)
+                            {
+                                <button class="btn-add"
+                                        style="background:#ef4444;color:#fff"
+                                        onclick="openClose(@b.Id)">
+                                    Close
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
 
-<!-- SUCCESS MESSAGE -->
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">
-        @TempData["Success"]
+<div id="bugModal" class="modal-overlay">
+    <div class="modal-box">
+        @using (Html.BeginForm("Create", "Bug", FormMethod.Post))
+        {
+            @Html.Hidden("Id")
+
+            <div class="filters">
+                <input name="Title" placeholder="Title" required />
+                @Html.DropDownList("Priority",
+                    new SelectList(Enum.GetValues(typeof(BugPriority))), "Priority")
+            </div>
+
+            <textarea name="Description" placeholder="Description"></textarea>
+
+            <div class="filters">
+                @Html.DropDownList("BugGroupId",
+                    new SelectList(Model.BugGroups, "Id", "Name"),
+                    "Group")
+
+                @Html.DropDownList("AssignedToUserId",
+                    new SelectList(Model.Users, "Id", "DisplayName"),
+                    "Unassigned")
+            </div>
+
+            <div class="filters">
+                <button class="btn-add">Save</button>
+                <button type="button"
+                        class="btn-add"
+                        style="background:#374151;color:#fff"
+                        onclick="closeModal()">
+                    Cancel
+                </button>
+            </div>
+        }
     </div>
-}
+</div>
 
-<!-- FILTER -->
-<form method="get" style="margin-bottom:15px">
-    Status:
-    <select name="status">
-        <option value="">-- All --</option>
-        @foreach (BugStatus s in Enum.GetValues(typeof(BugStatus)))
+<div id="closeModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Close Bug</h3>
+        <p>Bạn chắc chắn muốn đóng bug này?</p>
+
+        @using (Html.BeginForm("Closed", "Bug", FormMethod.Post))
         {
-            <option value="@s">@s</option>
+            @Html.Hidden("id", "", new { id = "closeBugId" })
+
+            <div class="filters">
+                <button class="btn-add"
+                        style="background:#ef4444;color:#fff">
+                    Confirm
+                </button>
+                <button type="button"
+                        class="btn-add"
+                        style="background:#374151;color:#fff"
+                        onclick="closeCloseModal()">
+                    Cancel
+                </button>
+            </div>
         }
-    </select>
+    </div>
+</div>
 
-    Priority:
-    <select name="priority">
-        <option value="">-- All --</option>
-        @foreach (BugPriority p in Enum.GetValues(typeof(BugPriority)))
-        {
-            <option value="@p">@p</option>
-        }
-    </select>
+<script>
+    function openCreate() {
+        document.getElementById("bugModal").style.display = "flex";
+    }
 
-    <button type="submit">Filter</button>
-</form>
+    function openEdit(id, title, desc, priority, groupId, userId) {
+        openCreate();
+        document.querySelector('[name=Id]').value = id;
+        document.querySelector('[name=Title]').value = title;
+        document.querySelector('[name=Description]').value = desc;
+        document.querySelector('[name=Priority]').value = priority;
+        document.querySelector('[name=BugGroupId]').value = groupId;
+        document.querySelector('[name=AssignedToUserId]').value = userId;
+    }
 
-<!-- TABLE -->
-<table class="table table-bordered table-hover">
-    <thead>
-        <tr>
-            <th>#</th>
-            <th>Title</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Assigned</th>
-            <th>Created</th>
-            <th width="220">Actions</th>
-        </tr>
-    </thead>
+    function closeModal() {
+        document.getElementById("bugModal").style.display = "none";
+    }
 
-    <tbody>
-        @if (!Model.Any())
-        {
-            <tr>
-                <td colspan="7" style="text-align:center">
-                    Không có bug nào
-                </td>
-            </tr>
-        }
-        else
-        {
-            foreach (var bug in Model)
-            {
-                <tr>
-                    <td>@bug.Id</td>
-                    <td>@bug.Title</td>
-                    <td>
-                        @switch (bug.Priority)
-                        {
-                            case BugPriority.High:
-                                <span class="badge bg-danger">High</span>
-                                break;
-                            case BugPriority.Medium:
-                                <span class="badge bg-warning">Medium</span>
-                                break;
-                            default:
-                                <span class="badge bg-secondary">Low</span>
-                                break;
-                        }
-                    </td>
-                    <td>
-                        @switch (bug.Status)
-                        {
-                            case BugStatus.Open:
-                                <span class="badge bg-info">Open</span>
-                                break;
-                            case BugStatus.InProgress:
-                                <span class="badge bg-primary">In Progress</span>
-                                break;
-                            case BugStatus.Fixed:
-                                <span class="badge bg-success">Fixed</span>
-                                break;
-                            case BugStatus.Closed:
-                                <span class="badge bg-dark">Closed</span>
-                                break;
-                        }
-                    </td>
-                    <td>
-                        @(bug.AssignedToUserId.HasValue
-        ? bug.AssignedToUserId.Value.ToString()
-        : "Unassigned")
-                    </td>
-                    <td>@bug.CreatedAt.ToString("dd/MM/yyyy")</td>
-                    <td>
-                        <a class="btn btn-sm btn-warning"
-                           href="@Url.Action("Edit", new { id = bug.Id })">
-                            ✏ Edit
-                        </a>
+    /* CLOSE */
+    function openClose(id) {
+        document.getElementById("closeBugId").value = id;
+        document.getElementById("closeModal").style.display = "flex";
+    }
 
-                        <a class="btn btn-sm btn-danger"
-                           href="@Url.Action("Delete", new { id = bug.Id })"
-                           onclick="return confirm('Xác nhận đóng bug này?')">
-                            🗑 Close
-                        </a>
-                    </td>
-                </tr>
-            }
-        }
-    </tbody>
-</table>
+    function closeCloseModal() {
+        document.getElementById("closeModal").style.display = "none";
+    }
+</script>

@@ -13,6 +13,6 @@ namespace BugTracker.Core.Entities
 
         public string Comment { get; set; }
 
-        public string CreatedByUserId { get; set; }
+        public int CreatedByUserId { get; set; }
     }
 }
