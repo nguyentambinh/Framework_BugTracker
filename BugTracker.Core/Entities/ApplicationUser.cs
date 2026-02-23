@@ -9,6 +9,7 @@ namespace BugTracker.Core.Entities
         public string DisplayName { get; set; }
         public int? RoleId { get; set; } // nullable
         public virtual Role Role { get; set; }
+        public string PasswordHash { get; set; }
         public bool IsActive { get; set; }
 
         // navigation

@@ -9,9 +9,20 @@ namespace BugTracker.Web.Infrastructure
             HttpContext.Current?.Session?["UserId"] as int?;
 
         public string UserName =>
-            HttpContext.Current?.User?.Identity?.Name ?? "System";
+            HttpContext.Current?.Session?["UserName"] as string ?? "System";
 
-        public string IpAddress =>
-            HttpContext.Current?.Request?.UserHostAddress;
+        public void SignIn(int userId, string userName)
+        {
+            var session = HttpContext.Current.Session;
+            session["UserId"] = userId;
+            session["UserName"] = userName;
+        }
+
+        public void SignOut()
+        {
+            var session = HttpContext.Current.Session;
+            session.Remove("UserId");
+            session.Remove("UserName");
+        }
     }
 }

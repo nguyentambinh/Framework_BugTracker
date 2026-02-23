@@ -1,8 +1,20 @@
 ﻿using BugTracker.Core.Interfaces;
 
-public class MigrationUserContext : IUserContext
+namespace BugTracker.Infrastructure.Context
 {
-    public int? UserId => null;
-    public string UserName => "migration";
-    public string IpAddress => "127.0.0.1";
+    public class MigrationUserContext : IUserContext
+    {
+        public int? UserId => null;
+        public string UserName => "system:migration";
+
+        public void SignIn(int userId, string userName)
+        {
+            // intentionally empty
+        }
+
+        public void SignOut()
+        {
+            // intentionally empty
+        }
+    }
 }

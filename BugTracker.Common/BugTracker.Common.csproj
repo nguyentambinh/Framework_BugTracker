@@ -61,6 +61,7 @@
     <Compile Include="Extensions\EnumExtensions.cs" />
     <Compile Include="Helpers\CurrentUserContext.cs" />
     <Compile Include="Helpers\DateTimeHelper.cs" />
+    <Compile Include="Helpers\SecurityHelper.cs" />
     <Compile Include="Helpers\StringHelper.cs" />
     <Compile Include="Models\PagedResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

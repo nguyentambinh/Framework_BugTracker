@@ -4,6 +4,8 @@
     {
         int? UserId { get; }
         string UserName { get; }
-        string IpAddress { get; }
+
+        void SignIn(int userId, string userName);
+        void SignOut();
     }
 }

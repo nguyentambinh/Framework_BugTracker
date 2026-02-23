@@ -12,7 +12,7 @@ namespace BugTracker.Web.Controllers
 {
     public class BugController : Controller
     {
-        private readonly IBugService _bugService;
+        private readonly BugService _bugService;
 
         public BugController()
         {
@@ -23,30 +23,25 @@ namespace BugTracker.Web.Controllers
 
         public ActionResult Index(BugStatus? status, int? groupId, int? userId, int page = 1)
         {
-            var bugs = _bugService.GetAll();
+            var filter = new BugFilterDto
+            {
+                Status = status,
+                GroupId = groupId,
+                UserId = userId,
+                Page = page
+            };
 
-            if (status.HasValue)
-                bugs = bugs.Where(x => x.Status == status.Value);
-
-            if (groupId.HasValue)
-                bugs = bugs.Where(x => x.BugGroupId == groupId.Value);
-
-            if (userId.HasValue)
-                bugs = bugs.Where(x => x.AssignedToUserId == userId.Value);
-
-            var bugList = bugs.ToList();
+            var dashboard = _bugService.GetDashboard(filter);
 
             var vm = new BugDashboardViewModel
             {
-                Bugs = bugList,
-
-                BugGroups = _bugService.GetBugGroups().ToList(),
-                Users = _bugService.GetUsers().ToList(),
-
-                TotalBugs = bugList.Count,
-                OpenBugs = bugList.Count(x => x.Status == BugStatus.Open),
-                InProgressBugs = bugList.Count(x => x.Status == BugStatus.InProgress),
-                ClosedBugs = bugList.Count(x => x.Status == BugStatus.Closed)
+                Bugs = dashboard.Bugs,
+                BugGroups = dashboard.BugGroups,
+                Users = dashboard.Users,
+                TotalBugs = dashboard.TotalBugs,
+                OpenBugs = dashboard.OpenBugs,
+                InProgressBugs = dashboard.InProgressBugs,
+                ClosedBugs = dashboard.ClosedBugs
             };
 
             return View(vm);
@@ -87,10 +82,16 @@ namespace BugTracker.Web.Controllers
 
         public ActionResult Closed(int id)
         {
-            _bugService.ChangeStatus(id, BugStatus.Closed);
+            var result = _bugService.Close(id);
+
+            if (!result.Success)
+            {
+                TempData["Error"] = result.Message;
+            }
+
             return RedirectToAction("Index");
         }
-        
+
 
         [HttpPost]
         public ActionResult Create(CreateBugDto dto)

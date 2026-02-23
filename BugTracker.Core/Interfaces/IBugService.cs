@@ -19,5 +19,7 @@ namespace BugTracker.Core.Interfaces
         Bug GetById(int id);
         IEnumerable<BugGroup> GetBugGroups();
         IEnumerable<ApplicationUser> GetUsers();
+        ServiceResult Close(int id);
+        DashboardDto GetDashboard(BugFilterDto filter);
     }
 }

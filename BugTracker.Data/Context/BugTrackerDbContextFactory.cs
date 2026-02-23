@@ -1,14 +1,18 @@
 ﻿using System.Data.Entity.Infrastructure;
 using BugTracker.Core.Interfaces;
 using BugTracker.Data.Context;
+using BugTracker.Infrastructure.Context; 
 
-public class BugTrackerDbContextFactory
-    : IDbContextFactory<BugTrackerDbContext>
+namespace BugTracker.Data.Context
 {
-    public BugTrackerDbContext Create()
+    public class BugTrackerDbContextFactory
+        : IDbContextFactory<BugTrackerDbContext>
     {
-        var fakeUserContext = new MigrationUserContext();
+        public BugTrackerDbContext Create()
+        {
+            IUserContext userContext = new MigrationUserContext();
 
-        return new BugTrackerDbContext(fakeUserContext);
+            return new BugTrackerDbContext(userContext);
+        }
     }
 }
