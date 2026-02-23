@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Web.Mvc;
+using BugTracker.Common.Helpers;
 using BugTracker.Core.DTOs;
 using BugTracker.Core.Entities;
 using BugTracker.Core.Enums;
@@ -98,6 +99,32 @@ namespace BugTracker.Web.Controllers
             int currentUserId = 2; 
             _bugService.Create(dto, currentUserId);
             return RedirectToAction("Index");
+        }
+
+        [HttpGet]
+        public ActionResult ExportExcel()
+        {
+            var bugs = _bugService.GetAll().ToList();
+
+            var exportData = bugs.Select(b => new {
+                MaLoi = "BUG-" + b.Id,
+                TieuDe = b.Title,
+                TrangThai = b.Status.ToString(),
+                DoUuTien = b.Priority.ToString(),
+                NguoiTao = b.CreatedByUser?.DisplayName ?? "System",
+                NgayTao = b.CreatedDate.ToString("dd/MM/yyyy HH:mm")
+            }).ToList();
+
+            byte[] fileContents = ExcelExportHelper.ExportToExcelXml(exportData, "DanhSachLoi");
+
+            return File(fileContents, "application/vnd.ms-excel", $"BaoCaoBug_{DateTime.Now:yyyyMMdd}.xls");
+        }
+
+        [HttpGet]
+        public ActionResult PrintPdf()
+        {
+            var bugs = _bugService.GetAll().ToList();
+            return View(bugs);
         }
     }
 }

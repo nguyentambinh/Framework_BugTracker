@@ -30,6 +30,37 @@
         font-weight: 600
     }
 
+    .btn-export {
+        background: transparent;
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease-in-out;
+        display: inline-block;
+        font-size: 14px;
+    }
+
+    .btn-excel {
+        border: 1px solid #10b981;
+        color: #10b981;
+    }
+
+        .btn-excel:hover {
+            background: #10b981;
+            color: var(--bg);
+        }
+
+    .btn-pdf {
+        border: 1px solid #ef4444;
+        color: #ef4444;
+    }
+
+        .btn-pdf:hover {
+            background: #ef4444;
+            color: var(--bg);
+        }
+
     .card {
         background: var(--card);
         border: 1px solid var(--border);
@@ -52,7 +83,6 @@
         width: 100%
     }
 
-    /* MODAL */
     .modal-overlay {
         position: fixed;
         inset: 0;
@@ -75,9 +105,16 @@
 
 <div class="dash">
 
-    <div class="card">
-        <h2>Bug Dashboard</h2>
-        <button class="btn-add" onclick="openCreate()">+ Add Bug</button>
+    <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <h2 style="margin: 0;">Bug Dashboard</h2>
+            <button class="btn-add" onclick="openCreate()">+ Add Bug</button>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <a href="@Url.Action("ExportExcel", "Bug")" class="btn-export btn-excel">Xuất Excel</a>
+            <a href="@Url.Action("PrintPdf", "Bug")" target="_blank" class="btn-export btn-pdf">Xuất PDF</a>
+        </div>
     </div>
 
     <!-- FILTER -->
