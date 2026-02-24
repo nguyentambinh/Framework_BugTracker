@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BugTracker.Core.Enums
 {
-    //Đánh dấu trạng tháng Bus
+    //Đánh dấu trạng tháng Bug
     public enum BugStatus
     {
         Open = 0,

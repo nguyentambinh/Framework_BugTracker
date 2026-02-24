@@ -27,13 +27,13 @@ namespace BugTracker.Service.Services
             var user = _userRepo.GetByUsername(dto.Username);
             if (user == null)
             {
-                _securityLogger.LogLoginFail(dto.Username);
+                _securityLogger.LogLoginFail(dto.Username, "User not found");
                 return AuthResult.Fail("Sai tài khoản hoặc mật khẩu");
             }
 
             if (!PasswordHasher.Verify(dto.Password, user.PasswordHash))
             {
-                _securityLogger.LogLoginFail(dto.Username);
+                _securityLogger.LogLoginFail(dto.Username, "Wrong Password");
                 return AuthResult.Fail("Sai tài khoản hoặc mật khẩu");
             }
 
@@ -41,7 +41,7 @@ namespace BugTracker.Service.Services
                 return AuthResult.Fail("Tài khoản bị khóa");
 
             _userContext.SignIn(user.Id, user.UserName);
-            _securityLogger.LogLoginSuccess(user.Id);
+            _securityLogger.LogLoginSuccess(user.UserName);
 
             return AuthResult.Ok(user.Id, user.UserName);
         }

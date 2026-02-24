@@ -3,6 +3,7 @@ using BugTracker.Core.DTOs;
 using BugTracker.Core.Entities;
 using BugTracker.Core.Enums;
 using BugTracker.Core.Interfaces;
+using BugTracker.Core.ViewModels;
 using BugTracker.Data.Context;
 using BugTracker.Data.UnitOfWork;
 using System;
@@ -16,10 +17,14 @@ namespace BugTracker.Service.Services
     public class BugService : IBugService
     {
         private readonly BugTrackerDbContext _context;
+        private readonly IPermissionService _permissionService;
 
-        public BugService(IUserContext userContext)
+        public BugService(
+    IUserContext userContext,
+    IPermissionService permissionService)
         {
             _context = new BugTrackerDbContext(userContext);
+            _permissionService = permissionService;
         }
 
         public ServiceResult Create(CreateBugDto dto, int currentUserId)
@@ -45,9 +50,31 @@ namespace BugTracker.Service.Services
             _context.Bugs.Add(bug);
             _context.SaveChanges();
 
-            return ServiceResult.Ok();
+            return ServiceResult.Ok("Tạo mới thành công");
         }
+        public ServiceResult Edit(EditBugDto dto, int currentUserId)
+        {
+            if (dto == null)
+                return ServiceResult.Fail("Dữ liệu không hợp lệ");
 
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                return ServiceResult.Fail("Tiêu đề bug không được để trống");
+
+            var bug = _context.Bugs.FirstOrDefault(x => x.Id == dto.Id);
+            if (bug == null)
+                return ServiceResult.Fail("Bug không tồn tại");
+
+            if (bug.Status == BugStatus.Closed)
+                return ServiceResult.Fail("Bug đã đóng, không thể chỉnh sửa");
+
+            bug.Title = dto.Title.Trim();
+            bug.Description = dto.Description;
+            bug.Priority = (BugPriority)dto.Priority;
+
+            _context.SaveChanges();
+
+            return ServiceResult.Ok("Sửa thành công");
+        }
         public ServiceResult Assign(int bugId, int assignToUserId)
         {
             var bug = _context.Bugs.Find(bugId);
@@ -58,7 +85,7 @@ namespace BugTracker.Service.Services
             bug.Status = BugStatus.InProgress;
 
             _context.SaveChanges();
-            return ServiceResult.Ok();
+            return ServiceResult.Ok("Phân công thành công");
         }
 
         public ServiceResult ChangeStatus(int bugId, BugStatus newStatus)
@@ -67,12 +94,36 @@ namespace BugTracker.Service.Services
             if (bug == null)
                 return ServiceResult.Fail("Bug không tồn tại");
 
+            var permissionResult = _permissionService.CanChangeStatus(bug, newStatus);
+
+            if (!permissionResult.Success)
+                return ServiceResult.Fail(permissionResult.Message);
+
             bug.Status = newStatus;
             _context.SaveChanges();
 
-            return ServiceResult.Ok();
+            return ServiceResult.Ok("Đổi trạng thái bug thành công");
         }
-
+        public List<UserPermissionViewModel> GetUserPermissions()
+        {
+            return (from u in _context.Users
+                    join rp in _context.RolePermissions on u.RoleId equals rp.RoleId into JoinedRP
+                    from p in JoinedRP.DefaultIfEmpty()
+                    where !u.IsDeleted
+                    select new UserPermissionViewModel
+                    {
+                        Id = u.Id,
+                        DisplayName = u.DisplayName,
+                        CanOpen = p != null ? p.CanOpen : false,
+                        CanInProgress = p != null ? p.CanInProgress : false,
+                        CanFixed = p != null ? p.CanFixed : false,
+                        CanClosed = p != null ? p.CanClosed : false
+                    }).ToList();
+        }
+        public bool CanChangeStatusFlag(BugStatus status)
+{
+    return _permissionService.CanChangeStatusFlag(status);
+}
         public IEnumerable<Bug> GetAll()
         {
             return _context.Bugs

@@ -1,4 +1,8 @@
-﻿public interface IPermissionService
+﻿using BugTracker.Core.Entities;
+using BugTracker.Core.Enums;
+
+public interface IPermissionService
 {
-    bool HasPermission(string permissionCode);
+    PermissionResult CanChangeStatus(Bug bug, BugStatus newStatus);
+    bool CanChangeStatusFlag(BugStatus status);
 }

@@ -1,253 +1,535 @@
-﻿@model BugDashboardViewModel
+﻿@model BugTracker.Core.ViewModels.BugDashboardViewModel
 @using BugTracker.Core.Enums
 
 @{
     ViewBag.Title = "Bug Dashboard";
     Layout = "~/Views/Shared/_LayoutUser.cshtml";
-    var bugs = Model.Bugs ?? new List<BugTracker.Core.Entities.Bug>();
 }
 
 <style>
     :root {
         --primary: #f59e0b;
+        --secondary: #10b981;
+        --danger: #ef4444;
+        --info: #3b82f6;
+        --purple: #a855f7;
         --bg: #020617;
         --card: #0b1020;
-        --border: rgba(255,255,255,.08);
+        --border: rgba(255,255,255,.1);
         --text: #e5e7eb;
+        --modal-bg: rgba(15, 23, 42, 0.98);
     }
 
     body {
         background: var(--bg);
-        color: var(--text)
+        color: var(--text);
+        font-family: 'Inter', sans-serif;
+        margin: 0;
+        padding-top: 100px;
+        padding-left: 20px;
+        padding-right: 20px;
+        padding-bottom: 40px;
     }
 
-    .btn-add {
-        background: var(--primary);
-        border: none;
-        padding: 8px 14px;
-        border-radius: 999px;
-        cursor: pointer;
-        font-weight: 600
+    .top-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 70px;
+        background: rgba(11, 16, 32, 0.9);
+        backdrop-filter: blur(15px);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 40px;
+        border-bottom: 1px solid var(--border);
+        z-index: 2000;
+    }
+
+    .dashboard-container {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 25px;
+        max-width: 1700px;
+        margin: 0 auto;
     }
 
     .card {
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: 16px;
-        padding: 16px;
-        margin-bottom: 20px
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 
-    .filters {
-        display: flex;
-        gap: 10px
+    table {
+        width: 100%;
+        border-collapse: collapse;
     }
 
-    select, input, textarea {
-        background: #020617;
+    th {
+        text-align: left;
+        padding: 12px;
+        color: #6b7280;
+        font-size: 11px;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border);
+    }
+
+    td {
+        padding: 16px 12px;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+    }
+
+    .status-badge {
+        font-size: 10px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-weight: bold;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        color: var(--primary);
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        border: none;
+        transition: 0.2s;
+        font-size: 12px;
+    }
+
+    .btn-create {
+        background: var(--secondary);
+        color: #000;
+        margin-bottom: 20px;
+    }
+
+    .btn-edit {
+        background: var(--info);
+        color: #fff;
+    }
+
+    .btn-save {
+        background: var(--secondary);
+        color: #000;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    /* Quick Set Buttons */
+    .btn-role {
+        font-size: 10px;
+        padding: 5px;
+        flex: 1;
         border: 1px solid var(--border);
-        color: var(--text);
-        padding: 8px;
-        border-radius: 10px;
-        width: 100%
+        background: rgba(255,255,255,0.05);
+        color: #94a3b8;
     }
 
-    /* MODAL */
+        .btn-role:hover {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+        }
+
+    /* Modal */
     .modal-overlay {
         position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,.6);
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.85);
+        backdrop-filter: blur(8px);
         display: none;
-        align-items: center;
         justify-content: center;
-        z-index: 1000;
+        align-items: center;
+        z-index: 3000;
     }
 
-    .modal-box {
-        background: var(--card);
+    .modal-content {
+        background: var(--modal-bg);
         border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 20px;
-        width: 600px;
-        max-width: 95%;
+        padding: 30px;
+        border-radius: 24px;
+        width: 550px;
+        box-shadow: 0 0 60px rgba(0,0,0,1);
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 12px;
+            background: #1e293b;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: #fff;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+    /* User Row */
+    .user-row {
+        padding: 15px;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.03);
+        margin-bottom: 15px;
+        border: 1px solid var(--border);
+    }
+
+    .canx-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 5px;
+        margin: 10px 0;
+    }
+
+    .canx-item {
+        padding: 8px 0;
+        border-radius: 6px;
+        font-size: 9px;
+        font-weight: 800;
+        background: #0f172a;
+        color: #475569;
+        text-align: center;
+        cursor: pointer;
+    }
+
+        .canx-item.active {
+            background: var(--info);
+            color: #fff;
+            box-shadow: 0 0 10px var(--info);
+        }
+
+    /* Toast Message Vietnamese Font Fix */
+    #toast-container {
+        position: fixed;
+        top: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        pointer-events: none;
+    }
+
+    .toast-msg {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: var(--secondary);
+        color: #000;
+        padding: 18px 45px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 16px;
+        text-align: center;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8);
+        border: 1px solid rgba(255,255,255,0.2);
+        animation: toastIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @@keyframes toastIn {
+        from {
+            transform: translateY(-100px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
     }
 </style>
 
-<div class="dash">
+<div class="top-nav">
+    <div style="font-weight: 900; font-size: 24px; color: var(--primary)">BUG<span style="color:#fff">TRACKER</span></div>
+    <a href="/Account/Logout" style="color: var(--danger); text-decoration: none; font-weight: bold; font-size: 13px;">SIGN OUT</a>
+</div>
 
+<div id="toast-container"></div>
+
+<div class="dashboard-container">
     <div class="card">
-        <h2>Bug Dashboard</h2>
-        <button class="btn-add" onclick="openCreate()">+ Add Bug</button>
-    </div>
+        <div style="display:flex; justify-content:space-between; align-items:center">
+            <h2 style="margin:0">Bug Management</h2>
+            <button class="btn btn-create" onclick="openCreateModal()">+ NEW BUG</button>
+        </div>
 
-    <!-- FILTER -->
-    <div class="card">
-        @using (Html.BeginForm("Index", "Bug", FormMethod.Get))
-        {
-            <div class="filters">
-                @Html.DropDownList("status",
-                    Enum.GetValues(typeof(BugStatus))
-                        .Cast<BugStatus>()
-                        .Select(x => new SelectListItem
-                             {
-                            Text = x.ToString(),
-                            Value = ((int)x).ToString()
-                        }), "All Status")
-
-                @Html.DropDownList("groupId",
-                    new SelectList(Model.BugGroups, "Id", "Name"),
-                    "All Groups")
-
-                @Html.DropDownList("userId",
-                    new SelectList(Model.Users, "Id", "DisplayName"),
-                    "All Users")
-
-                <button class="btn-add">Filter</button>
-            </div>
-        }
-    </div>
-
-    <!-- TABLE -->
-    <div class="card">
-        <table width="100%">
+        <table>
             <thead>
                 <tr>
-                    <th>Title</th>
+                    <th>Bug Details</th>
                     <th>Status</th>
-                    <th>Priority</th>
-                    <th>Group</th>
-                    <th>Assigned</th>
+                    <th>Meta</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var b in bugs)
+                @foreach (var row in Model.Bugs)
                 {
                     <tr>
-                        <td data-label="Title">@b.Title</td>
-                        <td data-label="Status"><span class="badge ">@b.Status</span></td>
-                        <td data-label="Priority">@b.Priority</td>
-                        <td data-label="Group">@((b.BugGroup?.Name) ?? "N/A")</td>
-                        <td data-label="Created By">@((b.CreatedByUser?.DisplayName) ?? "System")</td>
-                        <td data-label="Assigned">@((b.AssignedToUser?.DisplayName) ?? "Unassigned")</td>
-                        <td data-label="Date">@b.CreatedDate.ToString("dd/MM/yyyy")</td>
                         <td>
-                            <button class="btn-add"
-                                    onclick="openEdit(
-                                @b.Id,
-                                '@b.Title',
-                                '@b.Description',
-                                @((int)b.Priority),
-                                @(b.BugGroupId ?? 0),
-                                @(b.AssignedToUserId ?? 0)
-                            )">
-                                Edit
-                            </button>
-
-                            @if (b.Status != BugStatus.Closed)
-                            {
-                                <button class="btn-add"
-                                        style="background:#ef4444;color:#fff"
-                                        onclick="openClose(@b.Id)">
-                                    Close
-                                </button>
-                            }
+                            <div style="font-weight:bold; color:#fff">@row.Bug.Title</div>
+                            <div style="font-size:12px; color:#64748b">@row.Bug.Description</div>
+                        </td>
+                        <td><span class="status-badge">@row.Bug.Status</span></td>
+                        <td style="font-size:11px; color:#94a3b8">
+                            📁 @(row.Bug.BugGroup?.Name ?? "General")<br>
+                            👤 Assigned: @(row.Bug.AssignedToUser?.DisplayName ?? "Unassigned")
+                        </td>
+                        <td>
+                            <div style="display:flex; gap:5px">
+                                <button class="btn btn-edit" onclick="openEditModal(@row.Bug.Id, '@row.Bug.Title', '@row.Bug.Description', @row.Bug.BugGroupId, '@row.Bug.AssignedToUserId')">EDIT</button>
+                                <select onchange="changeStatus(@row.Bug.Id, this.value)" style="background:#1e293b; color:var(--primary); border:1px solid var(--primary); border-radius:6px; font-size:11px">
+                                    <option value="" disabled selected>Status</option>
+                                    @if (row.CanOpen)
+                                    {
+                                        <option value="0">Open</option>
+}
+                                    @if (row.CanInProgress)
+                                    {
+                                        <option value="1">Work</option>
+}
+                                    @if (row.CanFixed)
+                                    {
+                                        <option value="2">Fixed</option>
+}
+                                    @if (row.CanClosed)
+                                    {
+                                        <option value="3">Closed</option>
+}
+                                </select>
+                            </div>
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
-</div>
 
-<div id="bugModal" class="modal-overlay">
-    <div class="modal-box">
-        @using (Html.BeginForm("Create", "Bug", FormMethod.Post))
+    <div class="card">
+        <h3 style="margin-top:0; color: var(--primary)">User Management</h3>
+        @foreach (var u in Model.Users)
         {
-            @Html.Hidden("Id")
+            <div class="user-row" id="user-@u.Id">
+                <div style="display:flex; justify-content:space-between; align-items:center">
+                    <span style="font-weight:bold; color:#fff">@u.DisplayName</span>
+                    <span style="font-size:10px; color:var(--info)">ID: @u.Id</span>
+                </div>
 
-            <div class="filters">
-                <input name="Title" placeholder="Title" required />
-                @Html.DropDownList("Priority",
-                    new SelectList(Enum.GetValues(typeof(BugPriority))), "Priority")
-            </div>
+                <div class="canx-grid">
+                    <div class="canx-item @(u.CanOpen ? "active" : "")" onclick="this.classList.toggle('active')">OPEN</div>
+                    <div class="canx-item @(u.CanInProgress ? "active" : "")" onclick="this.classList.toggle('active')">WORK</div>
+                    <div class="canx-item @(u.CanFixed ? "active" : "")" onclick="this.classList.toggle('active')">FIX</div>
+                    <div class="canx-item @(u.CanClosed ? "active" : "")" onclick="this.classList.toggle('active')">CLOSE</div>
+                </div>
 
-            <textarea name="Description" placeholder="Description"></textarea>
+                <button class="btn btn-save" style="margin-bottom: 10px;" onclick="applyPerms(@u.Id)">SAVE PERMISSIONS</button>
 
-            <div class="filters">
-                @Html.DropDownList("BugGroupId",
-                    new SelectList(Model.BugGroups, "Id", "Name"),
-                    "Group")
-
-                @Html.DropDownList("AssignedToUserId",
-                    new SelectList(Model.Users, "Id", "DisplayName"),
-                    "Unassigned")
-            </div>
-
-            <div class="filters">
-                <button class="btn-add">Save</button>
-                <button type="button"
-                        class="btn-add"
-                        style="background:#374151;color:#fff"
-                        onclick="closeModal()">
-                    Cancel
-                </button>
+                <div style="display:flex; gap:5px; margin-top:5px">
+                    <button class="btn btn-role" onclick="quickSet(@u.Id, 'Admin')">SET ADMIN</button>
+                    <button class="btn btn-role" onclick="quickSet(@u.Id, 'Dev')">SET DEV</button>
+                    <button class="btn btn-role" onclick="quickSet(@u.Id, 'Tester')">SET TEST</button>
+                </div>
             </div>
         }
     </div>
 </div>
 
-<div id="closeModal" class="modal-overlay">
-    <div class="modal-box">
-        <h3>Close Bug</h3>
-        <p>Bạn chắc chắn muốn đóng bug này?</p>
-
-        @using (Html.BeginForm("Closed", "Bug", FormMethod.Post))
-        {
-            @Html.Hidden("id", "", new { id = "closeBugId" })
-
-            <div class="filters">
-                <button class="btn-add"
-                        style="background:#ef4444;color:#fff">
-                    Confirm
-                </button>
-                <button type="button"
-                        class="btn-add"
-                        style="background:#374151;color:#fff"
-                        onclick="closeCloseModal()">
-                    Cancel
-                </button>
+<div id="createModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="color: var(--secondary)">Create New Bug</h3>
+        <div class="form-group">
+            <label>Bug Title</label>
+            <input type="text" id="createTitle" placeholder="Tiêu đề lỗi...">
+        </div>
+        <div class="form-group">
+            <label>Detailed Description</label>
+            <textarea id="createDesc" rows="3" placeholder="Mô tả chi tiết tại đây..."></textarea>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px">
+            <div class="form-group">
+                <label>Bug Group</label>
+                <select id="createGroup">
+                    @foreach (var g in Model.BugGroups)
+                    {
+                        <option value="@g.Id">@g.Name</option>
+}
+                </select>
             </div>
-        }
+            <div class="form-group">
+                <label>Assign To</label>
+                <select id="createAssign">
+                    <option value="">-- Chọn người xử lý --</option>
+                    @foreach (var u in Model.Users)
+                    {
+                        <option value="@u.Id">@u.DisplayName</option>
+}
+                </select>
+            </div>
+        </div>
+        <button class="btn btn-save" onclick="submitCreate()">SUBMIT TO SYSTEM</button>
+        <button class="btn" style="background:transparent; color:#94a3b8; width:100%; margin-top:5px" onclick="closeModals()">Cancel</button>
+    </div>
+</div>
+
+<div id="editModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="color: var(--info)">Edit Bug Report</h3>
+        <input type="hidden" id="editId">
+        <div class="form-group">
+            <label>Bug Title</label>
+            <input type="text" id="editTitle">
+        </div>
+        <div class="form-group">
+            <label>Detailed Description</label>
+            <textarea id="editDesc" rows="3"></textarea>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px">
+            <div class="form-group">
+                <label>Bug Group</label>
+                <select id="editGroup">
+                    @foreach (var g in Model.BugGroups)
+                    {
+                        <option value="@g.Id">@g.Name</option>
+}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Assign To</label>
+                <select id="editAssign">
+                    <option value="">-- Chọn người xử lý --</option>
+                    @foreach (var u in Model.Users)
+                    {
+                        <option value="@u.Id">@u.DisplayName</option>
+}
+                </select>
+            </div>
+        </div>
+        <button class="btn btn-save" style="background: var(--info); color: white" onclick="submitEdit()">UPDATE CHANGES</button>
+        <button class="btn" style="background:transparent; color:#94a3b8; width:100%; margin-top:5px" onclick="closeModals()">Cancel</button>
     </div>
 </div>
 
 <script>
-    function openCreate() {
-        document.getElementById("bugModal").style.display = "flex";
+    function showToast(msg, success = true) {
+        const container = document.getElementById('toast-container');
+        const color = success ? '#10b981' : '#ef4444';
+        const shadow = success ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)';
+
+        container.innerHTML = `<div class="toast-msg" style="background:${color}; box-shadow: 0 10px 40px ${shadow}">${msg}</div>`;
+
+        setTimeout(() => {
+            const msgDiv = container.querySelector('.toast-msg');
+            if (msgDiv) {
+                msgDiv.style.opacity = '0';
+                msgDiv.style.transform = 'translateY(-20px)';
+                msgDiv.style.transition = '0.5s';
+                setTimeout(() => container.innerHTML = '', 500);
+            }
+        }, 3000);
     }
 
-    function openEdit(id, title, desc, priority, groupId, userId) {
-        openCreate();
-        document.querySelector('[name=Id]').value = id;
-        document.querySelector('[name=Title]').value = title;
-        document.querySelector('[name=Description]').value = desc;
-        document.querySelector('[name=Priority]').value = priority;
-        document.querySelector('[name=BugGroupId]').value = groupId;
-        document.querySelector('[name=AssignedToUserId]').value = userId;
+    function openCreateModal() { document.getElementById('createModal').style.display = 'flex'; }
+    function closeModals() {
+        document.getElementById('createModal').style.display = 'none';
+        document.getElementById('editModal').style.display = 'none';
     }
 
-    function closeModal() {
-        document.getElementById("bugModal").style.display = "none";
+    function openEditModal(id, title, desc, groupId, assignId) {
+        document.getElementById('editId').value = id;
+        document.getElementById('editTitle').value = title;
+        document.getElementById('editDesc').value = desc;
+        document.getElementById('editGroup').value = groupId;
+        document.getElementById('editAssign').value = assignId || "";
+        document.getElementById('editModal').style.display = 'flex';
     }
 
-    /* CLOSE */
-    function openClose(id) {
-        document.getElementById("closeBugId").value = id;
-        document.getElementById("closeModal").style.display = "flex";
+    /* API CALLS */
+
+    function quickSet(uid, role) {
+        fetch('/Bug/UpdateUserRole', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: uid, roleType: role })
+        }).then(r => r.json()).then(res => {
+            showToast(res.message, res.success);
+            if (res.success) setTimeout(() => location.reload(), 1200);
+        });
     }
 
-    function closeCloseModal() {
-        document.getElementById("closeModal").style.display = "none";
+    function applyPerms(uid) {
+        const row = document.getElementById(`user-${uid}`);
+        const items = row.querySelectorAll('.canx-item');
+        const data = {
+            userId: uid,
+            cO: items[0].classList.contains('active'),
+            cI: items[1].classList.contains('active'),
+            cF: items[2].classList.contains('active'),
+            cC: items[3].classList.contains('active')
+        };
+        fetch('/Bug/UpdateUserRole', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => showToast(res.message, res.success));
+    }
+
+    function submitCreate() {
+        const data = {
+            Title: document.getElementById('createTitle').value,
+            Description: document.getElementById('createDesc').value,
+            BugGroupId: document.getElementById('createGroup').value,
+            AssignedToUserId: document.getElementById('createAssign').value
+        };
+        fetch('/Bug/Create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => {
+            showToast(res.message, res.success);
+            if (res.success) setTimeout(() => location.reload(), 1200);
+        });
+    }
+
+    function submitEdit() {
+        const data = {
+            Id: document.getElementById('editId').value,
+            Title: document.getElementById('editTitle').value,
+            Description: document.getElementById('editDesc').value,
+            BugGroupId: document.getElementById('editGroup').value,
+            AssignedToUserId: document.getElementById('editAssign').value
+        };
+        fetch('/Bug/Edit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => {
+            showToast(res.message, res.success);
+            if (res.success) setTimeout(() => location.reload(), 1200);
+        });
+    }
+
+    function changeStatus(id, status) {
+        fetch('/Bug/ChangeStatus', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id, status: parseInt(status) })
+        }).then(r => r.json()).then(res => {
+            showToast(res.message, res.success);
+            if (res.success) setTimeout(() => location.reload(), 1000);
+        });
     }
 </script>

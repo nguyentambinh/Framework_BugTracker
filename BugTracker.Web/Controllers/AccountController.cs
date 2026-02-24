@@ -1,4 +1,5 @@
-﻿using System.Web.Mvc;
+﻿using System;
+using System.Web.Mvc;
 using BugTracker.Core.Dtos;
 using BugTracker.Core.Interfaces;
 
@@ -17,14 +18,18 @@ namespace BugTracker.Web.Controllers
             _userContext = userContext;
         }
 
+        [AllowAnonymous]
         [HttpGet]
         public ActionResult Login()
         {
+            if (_authService == null || _userContext == null)
+                throw new Exception("Unity chưa inject");
+
             return View(new LoginDto());
         }
 
+        [AllowAnonymous]
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public ActionResult Login(LoginDto model)
         {
             if (!ModelState.IsValid)

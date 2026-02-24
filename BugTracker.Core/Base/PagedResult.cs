@@ -7,4 +7,4 @@ namespace BugTracker.Core.Base
         public IEnumerable<T> Items { get; set; }
         public int TotalCount { get; set; }
     }
-}
+}   

@@ -26,6 +26,8 @@ namespace BugTracker.Data.Context
         public DbSet<ApplicationUser> Users { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<Permission> Permissions { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<RolePermission> RolePermissions { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
@@ -64,6 +66,8 @@ namespace BugTracker.Data.Context
         }
         private void AddAuditLogs()
         {
+            var now = DateTime.UtcNow;
+
             var entries = ChangeTracker.Entries()
                 .Where(e =>
                     e.Entity is IAuditable &&
@@ -73,42 +77,98 @@ namespace BugTracker.Data.Context
 
             foreach (var entry in entries)
             {
+                var entityName = entry.Entity.GetType().Name;
+
+                var entityId = 0;
+                if (entry.State != EntityState.Added)
+                {
+                    entityId = (int)entry.OriginalValues["Id"];
+                }
+
                 AuditLogs.Add(new AuditLog
                 {
-                    EntityName = entry.Entity.GetType().Name,
-                    EntityId = entry.CurrentValues["Id"] != null
-                                ? (int)entry.CurrentValues["Id"]
-                                : 0,
+                    EntityName = entityName,
+                    EntityId = entityId,
                     Action = entry.State.ToString(),
                     Changes = BuildChanges(entry),
-                    CreatedAt = DateTime.UtcNow,
-                    UserId = CurrentUserContext.UserId,
-                    UserName = CurrentUserContext.UserName,
-                    IpAddress = CurrentUserContext.Ip
+
+                    UserId = _userContext.UserId,
+                    UserName = _userContext.UserName,
+                    IpAddress = _userContext.IP,
+
+                    ChangedAt = now,
+                    CreatedAt = now
                 });
             }
+        }
+        private object ConvertEnumIfNeeded(DbEntityEntry entry, string propName, object value)
+        {
+            if (value == null)
+                return null;
+
+            var propInfo = entry.Entity.GetType().GetProperty(propName);
+            if (propInfo == null)
+                return value;
+
+            if (propInfo.PropertyType.IsEnum)
+                return Enum.GetName(propInfo.PropertyType, value);
+
+            return value;
         }
         private string BuildChanges(DbEntityEntry entry)
         {
             var changes = new Dictionary<string, object>();
 
-            foreach (var propName in entry.OriginalValues.PropertyNames)
+            // ADD
+            if (entry.State == EntityState.Added)
             {
-                var originalValue = entry.OriginalValues[propName];
-                var currentValue = entry.CurrentValues[propName];
-
-                if (!Equals(originalValue, currentValue))
+                foreach (var propName in entry.CurrentValues.PropertyNames)
                 {
+                    var newValue = entry.CurrentValues[propName];
+
                     changes[propName] = new
                     {
-                        Old = originalValue,
-                        New = currentValue
+                        Old = (object)null,
+                        New = ConvertEnumIfNeeded(entry, propName, newValue)
+                    };
+                }
+            }
+            // DELETE
+            else if (entry.State == EntityState.Deleted)
+            {
+                foreach (var propName in entry.OriginalValues.PropertyNames)
+                {
+                    var oldValue = entry.OriginalValues[propName];
+
+                    changes[propName] = new
+                    {
+                        Old = ConvertEnumIfNeeded(entry, propName, oldValue),
+                        New = (object)null
+                    };
+                }
+            }
+            // MODIFY
+            else if (entry.State == EntityState.Modified)
+            {
+                foreach (var propName in entry.OriginalValues.PropertyNames)
+                {
+                    var oldValue = entry.OriginalValues[propName];
+                    var newValue = entry.CurrentValues[propName];
+
+                    if (Equals(oldValue, newValue))
+                        continue;
+
+                    changes[propName] = new
+                    {
+                        Old = ConvertEnumIfNeeded(entry, propName, oldValue),
+                        New = ConvertEnumIfNeeded(entry, propName, newValue)
                     };
                 }
             }
 
-            return JsonConvert.SerializeObject(changes);
+            return changes.Any()
+                ? JsonConvert.SerializeObject(changes)
+                : null;
         }
-
     }
 }

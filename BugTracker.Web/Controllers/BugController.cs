@@ -1,104 +1,111 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Web.Mvc;
 using BugTracker.Core.DTOs;
-using BugTracker.Core.Entities;
 using BugTracker.Core.Enums;
 using BugTracker.Core.Interfaces;
-using BugTracker.Service.Services;
-using BugTracker.Web.Infrastructure;
+using BugTracker.Core.ViewModels;
+using System.Security.Claims;
+using System.Collections.Generic;
+using System;
 
 namespace BugTracker.Web.Controllers
 {
+    [Authorize]
     public class BugController : Controller
     {
-        private readonly BugService _bugService;
+        private readonly IBugService _bugService;
+        private readonly IUserPermissionManager _permManager; 
 
-        public BugController()
+        public BugController(IBugService bugService, IUserPermissionManager permManager)
         {
-            var userContext = new WebUserContext();
-            _bugService = new BugService(userContext);
+            _bugService = bugService;
+            _permManager = permManager;
         }
 
-
-        public ActionResult Index(BugStatus? status, int? groupId, int? userId, int page = 1)
+        [HttpGet]
+        public ActionResult Index(BugFilterDto filter)
         {
-            var filter = new BugFilterDto
+
+            filter = filter ?? new BugFilterDto { Page = 1 };
+            var dashboardData = _bugService.GetDashboard(filter);
+
+            var model = new BugDashboardViewModel
             {
-                Status = status,
-                GroupId = groupId,
-                UserId = userId,
-                Page = page
+                Bugs = dashboardData.Bugs.Select(b => new BugRowViewModel
+                {
+                    Bug = b,
+                    CanOpen = _bugService.CanChangeStatusFlag(BugStatus.Open),
+                    CanInProgress = _bugService.CanChangeStatusFlag(BugStatus.InProgress),
+                    CanFixed = _bugService.CanChangeStatusFlag(BugStatus.Fixed),
+                    CanClosed = _bugService.CanChangeStatusFlag(BugStatus.Closed)
+                }).ToList(),
+
+                Users = _bugService.GetUserPermissions(),
+                BugGroups = dashboardData.BugGroups,
+                TotalBugs = dashboardData.TotalBugs,
+                OpenBugs = dashboardData.OpenBugs,
+                InProgressBugs = dashboardData.InProgressBugs,
+                ClosedBugs = dashboardData.ClosedBugs,
+
+                CurrentPage = filter.Page
             };
 
-            var dashboard = _bugService.GetDashboard(filter);
-
-            var vm = new BugDashboardViewModel
-            {
-                Bugs = dashboard.Bugs,
-                BugGroups = dashboard.BugGroups,
-                Users = dashboard.Users,
-                TotalBugs = dashboard.TotalBugs,
-                OpenBugs = dashboard.OpenBugs,
-                InProgressBugs = dashboard.InProgressBugs,
-                ClosedBugs = dashboard.ClosedBugs
-            };
-
-            return View(vm);
-        }
-
-        private void LoadDropdowns(int? selectedGroupId = null, int? selectedUserId = null)
-        {
-            ViewBag.BugGroups = new SelectList(
-                _bugService.GetBugGroups(),
-                "Id",
-                "Name",
-                selectedGroupId
-            );
-
-            ViewBag.Users = new SelectList(
-                _bugService.GetUsers(),
-                "Id",
-                "DisplayName",
-                selectedUserId
-            );
-        }
-
-        public ActionResult Edit(int id)
-        {
-            var bug = _bugService.GetById(id);
-            if (bug == null) return HttpNotFound();
-
-            LoadDropdowns(bug.BugGroupId, bug.AssignedToUserId);
-            return View(bug);
+            return View(model);
         }
 
         [HttpPost]
-        public ActionResult Edit(int id, BugStatus status)
+        public ActionResult UpdateUserRole(int userId, string roleType = null, bool cO = false, bool cI = false, bool cF = false, bool cC = false)
         {
-            _bugService.ChangeStatus(id, status);
-            return RedirectToAction("Index");
-        }
 
-        public ActionResult Closed(int id)
-        {
-            var result = _bugService.Close(id);
-
-            if (!result.Success)
+            try
             {
-                TempData["Error"] = result.Message;
+                var manager = _permManager.ForUser(userId);
+
+                if (!string.IsNullOrEmpty(roleType))
+                {
+                    if (roleType == "Admin") manager.SetAdmin();
+                    else if (roleType == "Dev") manager.SetDev();
+                    else if (roleType == "Tester") manager.SetTester();
+                }
+                else
+                {
+                    manager.SetRole(cO, cI, cF, cC);
+                }
+
+                manager.Save();
+                return Json(new { success = true, message = "Cập nhật quyền thành công cho User " + userId });
             }
-
-            return RedirectToAction("Index");
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
         }
-
-
         [HttpPost]
         public ActionResult Create(CreateBugDto dto)
         {
-            int currentUserId = 2; 
-            _bugService.Create(dto, currentUserId);
-            return RedirectToAction("Index");
+            var result = _bugService.Create(dto, GetCurrentUserId());
+            return Json(new { success = result.Success, message = result.Message });
+        }
+
+        [HttpPost]
+        public ActionResult Edit(EditBugDto dto)
+        {
+            var result = _bugService.Edit(dto, GetCurrentUserId());
+            return Json(new { success = result.Success, message = result.Message });
+        }
+
+        [HttpPost]
+        public ActionResult ChangeStatus(int id, BugStatus status)
+        {
+            var result = _bugService.ChangeStatus(id, status);
+            return Json(new { success = result.Success, message = result.Message });
+        }
+
+        private int GetCurrentUserId()
+        {
+            var identity = (ClaimsIdentity)User.Identity;
+            var claim = identity.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            return claim != null ? int.Parse(claim.Value) : 0;
         }
     }
 }

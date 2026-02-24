@@ -288,8 +288,6 @@
             <div class="gold-inner">
                 @using (Html.BeginForm("Login", "Account", FormMethod.Post, new { @class = "login-form" }))
                 {
-                    @Html.AntiForgeryToken()
-
                     <h2>LOGIN</h2>
 
                     @Html.ValidationSummary(true, "", new { @class = "validation-summary-errors" })

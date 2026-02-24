@@ -7,13 +7,13 @@ namespace BugTracker.Data.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.5.1")]
-    public sealed partial class UpdateLogin : IMigrationMetadata
+    public sealed partial class Nah : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(UpdateLogin));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(Nah));
         
         string IMigrationMetadata.Id
         {
-            get { return "202602231327249_UpdateLogin"; }
+            get { return "202602232208047_Nah"; }
         }
         
         string IMigrationMetadata.Source

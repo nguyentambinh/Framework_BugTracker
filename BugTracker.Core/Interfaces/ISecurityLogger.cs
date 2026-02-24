@@ -2,7 +2,7 @@
 {
     public interface ISecurityLogger
     {
-        void LogLoginSuccess(int userId);
-        void LogLoginFail(string username);
+        void LogLoginSuccess(string username);
+        void LogLoginFail(string username, string reason);
     }
 }

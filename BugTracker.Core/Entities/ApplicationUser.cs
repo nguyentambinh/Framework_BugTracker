@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using BugTracker.Core.Base;
 
 namespace BugTracker.Core.Entities
@@ -13,7 +14,12 @@ namespace BugTracker.Core.Entities
         public bool IsActive { get; set; }
 
         // navigation
-        public virtual ICollection<Bug> AssignedBugs { get; set; }
+        public virtual ICollection<Bug> AssignedBugs { get; set; 
+        }
         public virtual ICollection<Bug> CreatedBugs { get; set; }
+        [NotMapped] public bool CanOpen { get; set; }
+        [NotMapped] public bool CanInProgress { get; set; }
+        [NotMapped] public bool CanFixed { get; set; }
+        [NotMapped] public bool CanClosed { get; set; }
     }
 }
