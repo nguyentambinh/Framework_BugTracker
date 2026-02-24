@@ -298,6 +298,10 @@
             <button class="btn btn-create" onclick="openCreateModal()">+ NEW BUG</button>
         </div>
 
+        <div style="display: flex; gap: 10px;">
+            <a href="@Url.Action("ExportExcel", "Bug")" class="btn-export btn-excel">Xuất Excel</a>
+            <a href="@Url.Action("PrintPdf", "Bug")" target="_blank" class="btn-export btn-pdf">Xuất PDF</a>
+        </div>
         <table>
             <thead>
                 <tr>
@@ -328,19 +332,19 @@
                                     @if (row.CanOpen)
                                     {
                                         <option value="0">Open</option>
-}
+                                    }
                                     @if (row.CanInProgress)
                                     {
                                         <option value="1">Work</option>
-}
+                                    }
                                     @if (row.CanFixed)
                                     {
                                         <option value="2">Fixed</option>
-}
+                                    }
                                     @if (row.CanClosed)
                                     {
                                         <option value="3">Closed</option>
-}
+                                    }
                                 </select>
                             </div>
                         </td>
