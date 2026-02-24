@@ -7,3 +7,6 @@ obj/
 *.log
 packages/
 App_Data/
+/BugTracker.Web/Web.config
+/BugTracker.Web/Web.Debug.config
+/BugTracker.Web/Web.Release.config

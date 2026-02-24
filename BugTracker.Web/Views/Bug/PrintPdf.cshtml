@@ -1,0 +1,56 @@
+﻿@model IEnumerable<BugTracker.Core.Entities.Bug>
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <title>Báo Cáo Lỗi - PDF</title>
+    <style>
+        body { font-family: Arial, sans-serif; color: #000; background: #fff; padding: 20px; }
+        .header-title { text-align: center; text-transform: uppercase; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #000; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+
+        @@media print {
+            @@page { margin: 1cm; }
+        }
+    </style>
+</head>
+<body>
+
+    <h2 class="header-title">Danh Sách Báo Cáo Lỗi (Bugs)</h2>
+    <p>Ngày trích xuất: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Mã Lỗi</th>
+                <th>Tiêu Đề</th>
+                <th>Trạng Thái</th>
+                <th>Độ Ưu Tiên</th>
+                <th>Ngày Tạo</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var bug in Model)
+            {
+                <tr>
+                    <td>BUG-@bug.Id</td>
+                    <td>@bug.Title</td>
+                    <td>@bug.Status</td>
+                    <td>@bug.Priority</td>
+                    <td>@bug.CreatedDate.ToString("dd/MM/yyyy")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <script>window.onload = function() {
+            window.print();
+        }</script>
+</body>
+</html>
